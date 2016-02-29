@@ -1,11 +1,11 @@
 % Plot metric at a single node
-figure; hold on;
+fig0=figure('visible','on'); hold on;
 for time=1:length(obs)
 	subplot(length(obs),1,time);
 	tmp_x = reshape(taus,[n_thresh 1]);
 	tmp_y = squeeze(mean(netstat_nodes(:,time,node,:),1)); tmp_y = reshape(tmp_y,[n_thresh 1]);
 	%plot(tmp_x,tmp_y,'linewidth',3); hold on;
-	errorbar(tmp_x,tmp_y,squeeze(var(netstat_nodes(:,time,node,:),1))); hold on;
+	errorbar(tmp_x,tmp_y,(squeeze(var(netstat_nodes(:,time,node,:),1)))); hold on;
 	title(sprintf('t = %3.1f',obs(time)),'fontsize',16);
 	if(time==length(obs))
 		xlabel('Varying threshold','fontsize',20');
@@ -40,7 +40,7 @@ if(usePlotly)
 	saveplotlyfig(response,filename);
 end
 
-fig1 = figure;
+fig1 = figure('visible','on');
 h = plot(tmp_x,squeeze(netstat_nodes(1,t_idx,node,:))'); hold on;
 set(h,'LineWidth',3);
 h= plot(tmp_x,squeeze(netstat_nodes(2,t_idx,node,:))');
@@ -61,7 +61,7 @@ switch bct_num
 	case  2
 	title('(Dis)Continuity of Clustering Coefficient for a Single Node','fontsize',24);
 	otherwise
-	title(['(Dis)Continuity of Metric: ' metric_str{1}(1) ', for a Single Node'],'fontsize',24);
+	title(strcat('(Dis)Continuity of Metric: ', metric_str{1}(1), ', for a Single Node'),'fontsize',24);
 end
 
 if(isWeighted)	
