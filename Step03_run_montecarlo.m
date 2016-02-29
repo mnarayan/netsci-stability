@@ -40,6 +40,11 @@ if(isWeighted)
 				assert(sum(diag(softthreshSig)<=0)~=0,'Negative values on diagonal');
 				%[V2 D2] = eig(softthreshSig); softthreshSig = V2*(D2+eye(p)*(.01+abs(min(diag(D2)))))*V2';
 				switch func2str(bct_funs{bct_num})
+				case 'betweenness_wei'
+					tmp_stats = feval(bct_funs{bct_num},softthreshSig);			
+					if(isScaled)		
+						tmp_stats = tmp_stats/((p-1)*(p-2));
+					end
 				case 'efficiency_wei'
 					tmp_stats = feval(bct_funs{bct_num},softthreshSig,1);
 				otherwise
@@ -62,6 +67,11 @@ else
 			assert(sum(diag(Sighat)<=0)~=0,'Negative values on diagonal');			
 			for tau=1:length(taus)
 				switch func2str(bct_funs{bct_num})
+				case 'betweenness_bin'
+					tmp_stats = feval(bct_funs{bct_num},1*(abs(Sighat)>taus(tau)));
+					if(isScaled)
+						tmp_stats = tmp_stats/((p-1)*(p-2));
+					end
 				case 'efficiency_bin'
 					tmp_stats = feval(bct_funs{bct_num},1*(abs(Sighat)>taus(tau)),1);
 				otherwise

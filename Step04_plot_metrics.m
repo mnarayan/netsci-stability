@@ -31,6 +31,11 @@ else
 		filename = ['Data/Binary/' func2str(bct_funs{bct_num}) '/Discontinuity_Example2' '_' graphtype];		
 	end
 end	
+if(isScaled)
+	if(strfind(func2str(bct_funs{bct_num}),'betweenness'))
+		filename = [filename 'Scaled'];
+	end
+end
 	
 savefig(filename)
 
@@ -71,6 +76,12 @@ else
 	filename1 = ['Data/Binary/' func2str(bct_funs{bct_num}) '/Discontinuity_Example1' '_' graphtype];
 	
 end	
+if(isScaled)
+	if(strfind(func2str(bct_funs{bct_num}),'betweenness'))
+		filename1 = [filename1 'Scaled'];
+	end
+end
+
 savefig(filename1)
 
 if(usePlotly)

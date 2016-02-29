@@ -9,8 +9,9 @@ bct_funs = {@betweenness_bin, ... %1
 			@clustering_coef_wu, ...
 			@efficiency_wei, ...
 			 };
-bct_num = 4;
-isWeighted = 1; % Eventually choose this and network metrics with error checking
+bct_num = 1;
+isWeighted = 0; % Eventually choose this and network metrics with error checking
+isScaled = 0;
 if(strfind(func2str(bct_funs{bct_num}),'wei')|strfind(func2str(bct_funs{bct_num}),'wu'))
 	isWeighted =1;
 elseif(isWeighted)
