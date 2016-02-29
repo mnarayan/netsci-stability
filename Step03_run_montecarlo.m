@@ -4,22 +4,20 @@
 
 t = 20*p;
 [V D] = eig(Sigma);
-sqrtSig = sqrtm(Sigma);
 
-X = randn(t,p)*sqrt(D)*V';
-disp('Verifying simulated Frobenius norm error at t=1000')
+Z = randn(t/2,p);
+X = Z*V*sqrt(D)*V';
+Y = Z*sqrtm(Sigma);
+disp(['Verifying simulated Frobenius norm error at t=' num2str(t/2)])
 frob_err = sum(sum((cov(X)-Sigma).^2,1),2)
-assert(frob_err/p<=1,'Error too large')
+assert(frob_err/p^2<=.1,'Error too large')
+assert(sum(sum((cov(X)-cov(Y)).^2,1),2)<=eps,'Simulation Incorrect')
 
-% X = randn(t,p)*sqrtSig;
-% disp('Verifying simulated Frobenius norm error at t=1000')
-% frob_err = sum(sum((cov(X)-Sigma).^2,1),2)
-% assert(frob_err/p<=1,'Error too large')
 
-X = randn(2*t,p)*sqrt(D)*V';
-disp('Verifying simulated Frobenius norm error at t=2000')
+X = randn(t,p)*V*sqrt(D)*V';
+disp(['Verifying simulated Frobenius norm error at t=' num2str(t)])
 frob_err = sum(sum((cov(X)-Sigma).^2,1),2)
-assert(frob_err/p<=1,'Error too large')
+assert(frob_err/p^2<=1e-2,'Error too large')
 
 
 
