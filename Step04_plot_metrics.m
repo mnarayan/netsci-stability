@@ -16,7 +16,22 @@ for time=1:length(obs)
 	ylim([-75 75]);
 	xlim([.08 .22]);
 end
-filename = ['Data/Discontinuity_Example2' '_' graphtype '_funnum' num2str(bct_num) '_Weighted' num2str(isWeighted)]
+if(isWeighted)
+	if(isdir(['Data/Weighted/' func2str(bct_funs{bct_num})]))	
+		filename = ['Data/Weighted/' func2str(bct_funs{bct_num}) '/Discontinuity_Example2' '_' graphtype];
+	else
+		mkdir(['Data/Weighted/' func2str(bct_funs{bct_num})]);
+		filename = ['Data/Weighted/' func2str(bct_funs{bct_num}) '/Discontinuity_Example2' '_' graphtype];
+	end
+else
+	if(isdir(['Data/Binary/' func2str(bct_funs{bct_num})]))
+		filename = ['Data/Binary/' func2str(bct_funs{bct_num}) '/Discontinuity_Example2' '_' graphtype];
+	else
+		mkdir(['Data/Binary/' func2str(bct_funs{bct_num})]);
+		filename = ['Data/Binary/' func2str(bct_funs{bct_num}) '/Discontinuity_Example2' '_' graphtype];		
+	end
+end	
+	
 savefig(filename)
 
 if(usePlotly)
@@ -38,20 +53,28 @@ legend({['Monte Carlo Run 1, t=' num2str(obs(t_idx))], ...
 				['Monte Carlo Run 3, t=' num2str(obs(t_idx))]},'fontsize',20)
 xlabel('Varying threshold','fontsize',20);
 ylabel('Network Metric','fontsize',20)
+
+metric_str = regexp(func2str(bct_funs{bct_num}),{'_'},'split');
 switch bct_num
 	case 1
 	title('(Dis)Continuity of Betweenness Centrality for a Single Node','fontsize',24);
 	case  2
 	title('(Dis)Continuity of Clustering Coefficient for a Single Node','fontsize',24);
 	otherwise
-	title(['(Dis)Continuity of Metric: ' func2str(bct_funs{bct_num}) ', for a Single Node'],'fontsize',24);
-
+	title(['(Dis)Continuity of Metric: ' metric_str{1}(1) ', for a Single Node'],'fontsize',24);
 end
-filename1 = ['Data/Discontinuity_Example1' '_' graphtype '_funnum' num2str(bct_num) '_Weighted' num2str(isWeighted)]
+
+if(isWeighted)	
+	filename1 = ['Data/Weighted/' func2str(bct_funs{bct_num}) '/Discontinuity_Example1' '_' graphtype];
+
+else
+	filename1 = ['Data/Binary/' func2str(bct_funs{bct_num}) '/Discontinuity_Example1' '_' graphtype];
+	
+end	
 savefig(filename1)
 
 if(usePlotly)
-	response = fig2plotly(gcf,'offline',true, 'filename',filename1,'fileopt', 'overwrite','strip','false');
+	response = fig2plotly(gcf,'offline', true, 'filename',filename1,'fileopt', 'overwrite','strip','false');
 	plotly_url = response.url;
 	saveplotlyfig(response,filename1);
 end
