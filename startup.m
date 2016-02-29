@@ -6,3 +6,7 @@ addpath(genpath(METRICS_PATH));
 % visualization
 PLOTLY_PATH = '../packages/MATLAB-api'
 addpath(genpath(PLOTLY_PATH));
+addpath(genpath(fullfile(matlabroot,'toolbox','plotly')),'-end');
+
+echo off;
+warning off;
