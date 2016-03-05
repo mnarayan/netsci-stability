@@ -1,0 +1,3 @@
+[submodule "parcor"]
+	path = parcor
+	url = git@bitbucket.org:mnarayan/parcor.git
