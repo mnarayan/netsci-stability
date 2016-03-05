@@ -30,7 +30,17 @@ if(isWeighted)
 		trial
 		for t=1:length(obs)
 			X = randn(obs(t),p)*V*sqrt(D)*V';
-			Sighat = cov(X); Sighat(find(eye(p))) = 0;
+			if(useParCor)
+				% Set Sighat actually equal to inverse
+				results = parcor(X,struct('visible',visible,'lambda',0));
+				if(visible) 
+					figure(1);imagesc(results.Rho); axis image; colorbar;
+					figure(2);imagesc(corr(X)); axis image; colorbar;
+				end
+				Sighat = results.Rho; Sighat(find(eye(p))) = 0; Sighat = abs(Sighat);
+			else
+				Sighat = cov(X); Sighat(find(eye(p))) = 0; Sighat = abs(Sighat);
+			end
 			for tau=1:length(taus)
 				%soft(g, τ ) := sign(g) · (|g| − τ )+
 				softSig = triu((abs(Sighat)-taus(tau)),1);
@@ -63,7 +73,17 @@ else
 		trial
 		for t=1:length(obs)
 			X = randn(obs(t),p)*V*sqrt(D)*V';
-			Sighat = cov(X); Sighat(find(eye(p))) = 0;
+			if(useParCor)
+				% Set Sighat actually equal to inverse
+				results = parcor(X,struct('visible',visible,'lambda',0));
+				if(visible) 
+					figure(1);imagesc(results.Rho); axis image; colorbar;
+					figure(2);imagesc(corr(X)); axis image; colorbar;
+				end
+				Sighat = results.Rho; Sighat(find(eye(p))) = 0; Sighat = abs(Sighat);
+			else
+				Sighat = cov(X); Sighat(find(eye(p))) = 0; Sighat = abs(Sighat);
+			end
 			assert(sum(diag(Sighat)<=0)~=0,'Negative values on diagonal');			
 			for tau=1:length(taus)
 				switch func2str(bct_funs{bct_num})
