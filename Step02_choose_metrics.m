@@ -33,12 +33,16 @@ t_idx = 5; % Choose from 1 to 5 where 1 corresponds to few observations at t=2p,
 %%%%%%%%%%%%%%%%%%
 %%%Choose Simulation Parameters%%%
 %%%%%%%%%%%%%%%%%%%
-obs = round(linspace(2*p,10*p,5)); % sample sizes: 5 values spaced between 2p and 10p
+if(useParCor)
+	obs = round(linspace(4*p,10*p,5)); % sample sizes: 5 values spaced between 2p and 10p
+else
+	obs = round(linspace(2*p,10*p,5)); % sample sizes: 5 values spaced between 2p and 10p
+end
 %%%%%%%%%%%%%%%%%%%
 n_trials = 50; % Monte carlo trials
 %%%%%%%%%%%%%%%%%%%
 n_thresh = 25; % Granularity of shrinkage or thresholding parameter
 tau_start = .1;
-tau_stop = .9;
+tau_stop = .9*max(max(triu(Sigma,1)));
 taus = linspace(tau_start,tau_stop,n_thresh);
 %%%%%%%%%%%%%%%%%%%
