@@ -47,6 +47,24 @@ if(normalize)
 		[max_val max_idx] = max(diag(tmpD));
 		tmp_metric = tmpV(:,max_idx);
 		max_centralization = sum(bsxfun(@minus,max(tmp_metric),tmp_metric));
+	case 'hub'
+		max_G = triu(max_G,1);
+		[hubs authorities eig_centrality] =  hits(max_G);
+		tmp_metric = hubs;
+		max_centralization = sum(bsxfun(@minus,max(tmp_metric),tmp_metric));
+		
+	case 'authority'
+		max_G = tril(max_G,-1);
+		[hubs authorities eig_centrality] =  hits(max_G);
+		tmp_metric = authorities;
+		max_centralization = sum(bsxfun(@minus,max(tmp_metric),tmp_metric));
+		
+	case 'pagerank'
+		max_G = triu(max_G,1);
+		beta = .95;
+		tmp_metric = pagerank_centrality(max_G, beta);
+		max_centralization = sum(bsxfun(@minus,max(tmp_metric),tmp_metric));		
+			
 	end
 else
 	max_centralization = 1;

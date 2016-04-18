@@ -30,15 +30,22 @@ function [hubs authorities eig_centrality] =  HITS(A,varargin);
 		else
 			bipartite = 1;
 		end
+		
+		if(isfield(opts,'beta'))
+			beta = opts.beta;
+		else
+			beta = 1;
+		end
 	else
 		visible = 0;
 		bipartite = 1;
+		beta = 1;
 	end
 	
 	assert(sum(sum(abs(A-A')))>1,'Adjacency matrix is symmetric and undirected');
 	
-	L_in = A*A';
-	L_out = A'*A;
+	L_in = beta.*A*A' + (1-beta)/size(A,1).*ones(size(A,1),size(A,1));
+	L_out = beta.*A'*A + (1-beta)/size(A,1).*ones(size(A,1),size(A,1));
 	
 	[V_in D_in] = eig(L_in); 	
 	[sorted_D_in idx_in]  = sort(diag(D_in),'descend');
