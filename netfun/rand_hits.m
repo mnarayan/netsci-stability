@@ -13,7 +13,7 @@ h_k = ones(1,p);
 a_k = ones(1,p);
 u = ones(1,p);
 
-A = A+eye(p);
+A = A;
 D_row = sum(A,2); D_row(D_row==0) = 1;
 D_col = sum(A,1);  D_col(D_col ==0) = 1;
 
