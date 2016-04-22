@@ -1,1 +1,1 @@
-Data/Weighted/eigenvector_centrality_und/ filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text
