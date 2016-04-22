@@ -33,7 +33,7 @@ if(isWeighted)
 			if(useParCor)
 				% Set Sighat actually equal to inverse
 				results = parcor(X,struct('visible',visible,'lambda',0));
-				if(visible) 
+				if(visible)
 					figure(1);imagesc(results.Rho); axis image; colorbar;
 					figure(2);imagesc(corr(X)); axis image; colorbar;
 				end
@@ -49,19 +49,21 @@ if(isWeighted)
 				softthreshSig = softthreshSig + softthreshSig';
 				assert(sum(diag(softthreshSig)<=0)~=0,'Negative values on diagonal');
 				%[V2 D2] = eig(softthreshSig); softthreshSig = V2*(D2+eye(p)*(.01+abs(min(diag(D2)))))*V2';
+				% Turn correlation values into measure of dissimilarity
+				affinitySig = exp(-(softthreshSig).^2/.15);
 				switch func2str(bct_funs{bct_num})
 				case 'betweenness_wei'
-					tmp_stats = feval(bct_funs{bct_num},softthreshSig);			
-					if(isScaled)		
+					tmp_stats = feval(bct_funs{bct_num},affinitySig);
+					if(isScaled)
 						tmp_stats = tmp_stats/((p-1)*(p-2));
 					end
 				case 'efficiency_wei'
-					tmp_stats = feval(bct_funs{bct_num},softthreshSig,1);
+					tmp_stats = feval(bct_funs{bct_num},affinitySig,1);
 				otherwise
-					tmp_stats = feval(bct_funs{bct_num},softthreshSig);
+					tmp_stats = feval(bct_funs{bct_num},affinitySig);
 				end
 				if(~isreal(tmp_stats))
-					warning('Network metrics are complex. Taking absolute values'); 
+					warning('Network metrics are complex. Taking absolute values');
 					tmp_stats = abs(tmp_stats);
 				end
 				netstat_nodes(trial,t,:,tau) = tmp_stats;
@@ -76,7 +78,7 @@ else
 			if(useParCor)
 				% Set Sighat actually equal to inverse
 				results = parcor(X,struct('visible',visible,'lambda',0));
-				if(visible) 
+				if(visible)
 					figure(1);imagesc(results.Rho); axis image; colorbar;
 					figure(2);imagesc(corr(X)); axis image; colorbar;
 				end
@@ -84,7 +86,7 @@ else
 			else
 				Sighat = cov(X); Sighat(find(eye(p))) = 0; Sighat = abs(Sighat);
 			end
-			assert(sum(diag(Sighat)<=0)~=0,'Negative values on diagonal');			
+			assert(sum(diag(Sighat)<=0)~=0,'Negative values on diagonal');
 			for tau=1:length(taus)
 				switch func2str(bct_funs{bct_num})
 				case 'betweenness_bin'
@@ -98,7 +100,7 @@ else
 					tmp_stats = feval(bct_funs{bct_num},1*(abs(Sighat)>taus(tau)));
 				end
 				if(~isreal(tmp_stats))
-					warning('Network metrics are complex. Taking absolute values'); 
+					warning('Network metrics are complex. Taking absolute values');
 					tmp_stats = abs(tmp_stats);
 				end
 				netstat_nodes(trial,t,:,tau) = tmp_stats;

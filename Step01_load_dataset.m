@@ -1,4 +1,3 @@
-startup;
 
 datapath = 'Data'
 datafile = 'RestingMatrices.mat'
@@ -14,10 +13,10 @@ end
 
 visible = 0;	% Plot figures or turn off plot checks.
 
-if(~useParCor) 
-	graphtype = 'Resting_p18'; % Name dataset/graph origin. 
+if(~useParCor)
+	graphtype = 'Resting_p18'; % Name dataset/graph origin.
 else
-	graphtype = 'Resting_p18_parcor'; % Name dataset/graph origin. 
+	graphtype = 'Resting_p18_parcor'; % Name dataset/graph origin.
 end
 
 tmp_dataset = load([datapath '/' datafile]);
