@@ -12,6 +12,8 @@ function  [cpdag] = dag_to_cpdag(dags)
 %
 % 
 % francois.olivier.c.h@gmail.com, philippe.leray@univ-nantes.fr
+% 
+% Modified by Manjari Narayan (2016)
 
 if ~iscell(dags)
     dag=cell(1,1);
@@ -42,7 +44,7 @@ function [label] = label_edges(dag)
 
 N=length(dag);
 [order xedge yedge] = order_edges(dag);
-label = 2*dag; % all edges as unknown
+label = dag; % all edges as unknown
 
 NbEdges = length(xedge) ;
 %xedge=x, yedge=y, %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
