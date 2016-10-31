@@ -2,6 +2,8 @@
 
 METRICS_PATH= '../packages/BCT'
 addpath(genpath(METRICS_PATH));
+addpath(('python'))
+addpath(('netfun'))
 
 % visualization
 PLOTLY_PATH = '../packages/MATLAB-api'
