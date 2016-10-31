@@ -30,9 +30,10 @@ centrality2centralization(a_pgrank,'pagerank',1)
 A = zeros(4,4);
 A(1,2) = 1; A(1,3) = 1;  A(2,3) = 1; A(3,4) = 1;
 [hubs authorities eig_centrality] =  hits(A);
-assert(~any(hubs - [.618 .382 0  0]'),'Hubs are incorrect for [0 1 1 0; 0 0 1 0; 0 0 0 1; 0 0 0 0]');
-assert(~any(authorities - [0 0 .618 .382]'),'Authorities are incorrect for [0 1 1 0; 0 0 1 0; 0 0 0 1; 0 0 0 0]');
+assert(sum(hubs - [.618 .382 0 0]')< 1e-3,'Hubs are incorrect for [0 1 1 0; 0 0 1 0; 0 0 0 1; 0 0 0 0]');
+assert(sum(authorities - [0 .3820 .6180 0]')< 1e-3,'Authorities are incorrect for [0 1 1 0; 0 0 1 0; 0 0 0 1; 0 0 0 0]');
 [hubs authorities] =  rand_hits(A,1-beta);
+[h_pgrank] = pagerank(A, struct('beta',1-beta)); [a_pgrank] = pagerank(A',struct('beta',1-beta));
 [h_pgrank] = pagerank_centrality(A, beta); [a_pgrank] = pagerank_centrality(A',beta);
 
 % Cornell Example
