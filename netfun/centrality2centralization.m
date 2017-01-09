@@ -12,17 +12,24 @@
 % 2. Then call centrality2centralization for theoretically most central network i.e. star topology of size p
 % 3. Divide centralization from Step 1 / centralization from Step 2
 
-function centralization = centrality2centralization(centrality, centrality_type,normalize)
+function [centralization diff_centrality] = centrality2centralization(centrality, centrality_type, normalize, varargin)
 
 	
 if(length(size(centrality))>2)
 	disp('Input should be a vector of length (no. of nodes x 1)');
 end
 	
+if(nargin==4)
+	cfun = varargin{1}; 
+else
+	cfun = [];
+end
+	
 p = length(centrality)	;
+max_centralization = 0;
 	
 most_central = max(centrality); 
-diff_centrality = bsxfun(@minus, most_central, centrality);
+diff_centrality = abs(bsxfun(@minus, most_central, centrality));
 
 
 % TBD: Create star graph and compute maximum possible centrality scores for the star graph. 
@@ -64,13 +71,18 @@ if(normalize)
 		beta = .95;
 		tmp_metric = pagerank_centrality(max_G, beta);
 		max_centralization = sum(bsxfun(@minus,max(tmp_metric),tmp_metric));		
+		
+	case 'custom'
+		disp('Not implemented')
 			
 	end
 else
-	max_centralization = 1;
+	max_centralization = (p-1)*max(diff_centrality); %norm(diff_centrality); %most_central;
+	if(max_centralization==0)
+		max_centralization = 1.0;
+	end
 end
 
 centralization = sum(diff_centrality)/max_centralization;
-
 	
 end
