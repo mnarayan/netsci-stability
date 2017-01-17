@@ -26,9 +26,13 @@ classdef currentflow
 		
 			p = size(A,1); 
 			A(find(eye(p))) = 0; 
-				
 			D = sum(abs(A)); 
-			output = diag(D) - A; 
+			normalize = true;
+			if(normalize)
+				output = eye(p) - inv(diag(sqrt(D)))*A*inv(diag(sqrt(D)));
+			else
+				output = diag(D) - A; 
+			end
 			
 		end
 
@@ -67,34 +71,78 @@ classdef currentflow
 		
 		end
 		
-		function output = neighborhood(A,K, varargin)
-			% Eigenvector | Katz | Bonanich
+		function output = neighborhood(A,G,varargin)
+			% Eigenvector
+			% Compare with walk probability matrix here
+			% https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4897067/
 			
-			
-			
-			% p = size(A,1);
-			% A(find(eye(p))) = 0;
-			% D = sum(abs(A));
-			% D = reshape(D, [p 1]);
-			% centrality = K*D;
-			
-			%centrality = eigenvector_centrality_und(A);
-			centrality = bonanich_power_centrality(K); 	
-			
-			output = centrality; 
-			
+			if(isempty(G))
+				G = currentflow.inverse_laplacian_matrix(A); 
+			end
+			p = size(G,1);
+			% W = zeros(p,p);
+			% W = A;
+			% W(find(eye(p))) = 0.0;
+			% D = sum(W,2);
+			% D(D==0) = 1.0;
+			% D_alt = sqrtm(diag(D));
+			% W = D_alt + D_alt^(-1)*W*D_alt^(-1);
+			%centrality = eigenvector_centrality_und(G);			
+			%centrality = bonanich_power_centrality(W',struct('beta',.8)); 	
+			centrality = eigenvector_centrality_und(G); 	
+			output = centrality/sum(centrality); 
 			
 		end
 		
+		function [output] = conductance(A,Ci,varargin)
+			% conductance of a cut
+			%
+			% Reference: 
+			% Hierarchical Directed Spectral Graph Partitioning
+			% by D. Gleich
+			
+			p = size(A,1); 
+			A = triu(A,1); 
+			output = zeros(p,1); 
+			n_com = length(unique(Ci)); 
+			
+			for community_no = 1:n_com
+				node_no = find(Ci==community_no); 
+				other_nodes = setdiff([1:p],node_no); 
+				
+				vol_nodes = sum(sum(A(node_no,:),2));
+				vol_othernodes = sum(sum(A(other_nodes,:),2)); 
+				output(node_no) = sum(A(node_no,other_nodes))/min(vol_nodes,vol_othernodes); 
+			end	
+			
+		end
 		
-		function [output varargout] = degree(A,varargin)
-			% total communicability
+		function [output varargout] = degree(A,G,varargin)
+			% Degree and closeness are virtually identical 
 			
-			K = currentflow.inverse_laplacian_matrix(A); 
-			K(find(eye(size(K,1)))) = 0;
-			output = sum(K); 
+			if(isempty(G))
+				G = currentflow.inverse_laplacian_matrix(A); 
+			end
+			p = size(G,1); 
+			isSigned = true;
 			
-			output = output/sum(output); 
+			% K = triu(1./(G+eye(p)),1);
+			% K = K + K';
+			
+			output = zeros(p,1); 	
+			% rescale from 0 to 1
+			% output = bsxfun(@minus,max(output),output)./(max(output)-min(output)); 
+			% rescale by sum
+			% output = output/sum(output); 
+			
+			if(isSigned)
+				pos_centrality = sum(G.*(G>0)); 
+				neg_centrality = abs(sum(G.*(G<0))); 
+				output = pos_centrality/max(max(pos_centrality),1) + neg_centrality/max(max(neg_centrality),1); 
+			else
+				output = sum(G); 
+				output = output/max(output);
+			end
 			
 		end
 		
@@ -108,22 +156,35 @@ classdef currentflow
 				error('node argument missing')
 			end
 			
-			K(find(eye(size(K,1)))) = 0;			
+			%K(find(eye(size(K,1)))) = 0;			
 			not_node = setdiff([1:p],node);
 			for ss=1:p
 				for tt=1:ss
-					res = K(node,ss) - K(node,tt) + K(not_node,tt) - K(not_node,ss);
-					output(ss,tt) = .5*sum(A(node,not_node).*res');
+					try
+						res = K(node,ss) - K(node,tt) + K(not_node,tt) - K(not_node,ss);
+					catch
+						disp('Sizes not matching')
+						res = K(node,ss) - K(node,tt) + K(not_node,tt)' - K(not_node,ss)';						
+					end
+					output(ss,tt) = .5*sum(A(node,not_node).*abs(res)');
 				end
 			end
 			
 		end
 		
 		
-		function output = betweenness(A,K,varargin)
-			% K should be currentflow.distance
+		function output = betweenness(A,G,varargin)
+			% K should be currentflow.inverse_laplacian_matrix
 			p = size(A,1); 
 			output = zeros(p,1);
+
+			if(exist('G','var'))
+				if(isempty(K))
+					G = currentflow.inverse_laplacian_matrix(A); 
+				end
+			else
+				G = currentflow.inverse_laplacian_matrix(A); 
+			end
 			
 			if(nargin==3)
 				nodelist = varargin{1}; 
@@ -131,20 +192,25 @@ classdef currentflow
 				nodelist = 1:p;
 			end 
 			
-			for ii=nodelist
-				%sprintf('Computing betweenness for node %d',ii)
-				output(ii) = sum(sum(currentflow.flowmatrix(A,K,ii)))/nchoosek(p,2); 
+			if(isempty(nodelist)|nodelist(1) == 0)
+				disp('Skipping Betweenness')
+			else
+				for ii=[nodelist]
+					%sprintf('Computing betweenness for node %d',ii)
+					output(ii) = sum(sum(currentflow.flowmatrix(A,G,ii)))/nchoosek(p,2); 
+				end
 			end
 			
-			disp('No. of negative values')
-			sum(output<0)
+			assert(sum(output<0)==0,'Negative values of Betweennes')
+			% disp('No. of negative values')
+			% sum(output<0)
 			
-			pos_output = output.*(output>0); 
-			pos_output = pos_output/max(pos_output); 
-			neg_output = abs(output.*(output<=0)); 
-			neg_output = neg_output/max(neg_output); 
-			
-			output = pos_output + neg_output;
+			% pos_output = output.*(output>0);
+			% pos_output = pos_output/max(max(pos_output),1);
+			% neg_output = abs(output.*(output<=0));
+			% neg_output = neg_output/max(max(neg_output),1);
+			%
+			% output = pos_output + neg_output;
 			
 		end
 		
@@ -169,17 +235,17 @@ classdef currentflow
 			
 			metrics(:,1) = currentflow.neighborhood(A,G); 
 			labels{1} = 'CFlow Neighbor.';
-			metrics(:,2) = currentflow.degree(A); 
+			metrics(:,2) = currentflow.degree(A,K); 
 			labels{2} = 'CFlow Degree';
 			metrics(:,3) = currentflow.closeness(A,K); 
 			labels{3} = 'CFlow Closeness';
 			
-			if(nargin==2)
+			if(nargin>=2)
 				nodelist = varargin{1}; 				
-				metrics(:,4) = currentflow.betweenness(A,G,nodelist);
-			else	
-				metrics(:,4) = currentflow.betweenness(A,G);
+			else
+				nodelist = [1:size(A,1)]; 
 			end
+			metrics(:,4) = currentflow.betweenness(A,G,nodelist);
 			labels{4} = 'CFlow Betweenness'; 
 		
 			output.metrics = metrics;
