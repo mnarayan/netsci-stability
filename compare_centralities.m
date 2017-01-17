@@ -93,8 +93,7 @@ classdef compare_centralities
 			if(plotfigs)
 				plotmatrix_figh = compare_centralities.compare_centrality_types(dvalues,...
 																	centrality_labels, ...
-																    traversal_labels, ...
-																	1);
+																    traversal_labels);
 			else
 				plotmatrix_figh = [];
 			end
@@ -162,8 +161,8 @@ classdef compare_centralities
 			
 			output = zeros(size(ranks,1),size(ranks,2),length(k));
 			
-			for kk=k
-				output(:,:,kk) = ranks<=kk;
+			for kk=1:length(k)
+				output(:,:,k(kk)) = ranks<=k(kk);
 			end
 			
 		end
@@ -449,9 +448,7 @@ classdef compare_centralities
 				%%%
 				g.geom_bar();
 				%%%
-				% % Plot linear fits of the data with associated confidence intervals
-				% g.stat_glm();
-				%%%
+				
 				% Set appropriate names for legends
 				g.set_names('x', 'Type','y','Centralization (Mean/Max)','size',24);
 				g.set_text_options('base_size',18,'label_scaling',1.4,'title_scaling',1.4,'big_title_scaling',2)
@@ -474,11 +471,5 @@ classdef compare_centralities
 			
 		end
 		
-		
-		function figh = plot_ranklines(ranks,labels)
-			
-			
-
-		end
 	end
 end
