@@ -8,7 +8,7 @@ function output = relative_importance(metric)
 	metric = reshape(metric,[p 1]); 
 	
 	if(useMatlab)
-		rank_metric = tiedrank(metric,0,1); 
+		rank_metric = tiedrank(metric); 
 	end
 	
 	output = array2table(metric, 'VariableNames', {'rawmetric'});
