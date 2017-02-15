@@ -87,7 +87,8 @@ classdef compare_centralities
 			discriminability = compare_centralities.discriminability(metrics); 
 			ranks = compare_centralities.rank_centrality(metrics); 
 			dvalues = compare_centralities.dvalues(ranks); 
-			[rank_agreement total_agreement] = compare_centralities.intersection_distance(ranks); 
+			[rank_agreement total_agreement] = compare_centralities.intersection_distance(ranks);
+			%rank_pairs = compare_centralities.intersection_distance(ranks);  
 			global_agreement = compare_centralities.global_agreement(rank_agreement); 
 			
 			if(plotfigs)
@@ -124,7 +125,106 @@ classdef compare_centralities
 			
 		end
 
+
+		function output = run_metric(A,metricfun,label,nodelist,varargin)
+			% run_metric
+			% function output = run_metric(A,metricfun,label,varargin)
+			% 
+			% INPUTS
+			% 	- A 	 		A p times p adjacency matrix 
+			% 	- metricfun 	A function handle to metric
+			% 	- label			A string containing labelname of the metric
+			% OUTPUTS
+			% 
+			% 
+			
+			narginchk(1,6);
+			
+			if(nargin==6)
+				source = varargin{1}; 
+				target = varargin{2}; 
+			elseif(nargin>4)
+				error('Input arguments not supported')
+			end
+			
+			if(exist('metricfun','var'))
+				fprintf('Calculating centrality statistics using function:%s \n ',func2str(metricfun));
+			else
+				metricfun = @resolvent_centrality;
+				fprintf('Using default metric %s', metricfun)
+			end
+			
+			if(~exist('label','var'))
+				fprintf('No label provided. Using name:%s \n ',func2str(metricfun));
+				label = func2str(metricfun);
+			end
+			
+			p = size(A,1);
+			if(~exist('source','var'))
+				source = 1:p;
+			end
+			if(~exist('target','var'))
+				target = 1:p;
+			end
+			
+			output = compare_centralities.create_metric_struct();			
+			fun_results = metricfun(A,nodelist,source,target); 
+			metrics = fun_results.centrality;
+			vec_metrics = full(metrics(metrics~=0)); vec_metrics = reshape(vec_metrics,[length(vec_metrics) 1]);
+			size(vec_metrics)
+			metrics
+			discriminability = compare_centralities.discriminability(vec_metrics); 
+			ranks(metrics~=0) = sparse(compare_centralities.rank_centrality(vec_metrics));
+			
+			metrics(nodelist{1})
+			output.fun = metricfun;
+			output.label = label;
+			output.source = source;
+			output.target = target;
+			output.nodelist = nodelist;
+			output.fun_results = fun_results;
+			output.metrics = metrics;
+			output.ranks = ranks;
+			output.discriminability = discriminability;
+			% output = setfield(output,{1},...
+			% 				'fun',metricfun,...
+			% 				'label',label,...
+			% 				'source',source, ...
+			% 				'target',target, ...
+			% 				'nodelist',nodelist, ...
+			% 				'fun_results',fun_results,...
+			% 				'metrics',metrics,...
+			% 				'ranks',ranks,...
+			% 				'discriminability',discriminability);
+			%			
+			
+		end
+
+		function output = create_metric_struct(varargin)
+		
+			output = struct();
+			output.fun = @resolvent_centrality; 
+			output.fun_results = {};
+			output.label = 'resolvent'; 
+			output.metrics = [];
+			output.discriminability = [];
+			output.rank_pairs = [];
+			output.source = [];
+			output.target = [];
+			output.nodelist = [];
+		
+		end
+
 		function output = discriminability(metrics)
+			% 
+			% Compute discriminability of a network  using centralization of each centrality metric.
+			% Centralization is high if some nodes have high centrality and others have a low centrality. 
+			% 
+			% INPUT
+			% - metrics consists of n_nodes x n_metrics
+			% OUTPUT
+			% - output is a vector of length 1 x n_metrics
+			% 
 			
 			p = size(metrics,2); 
 			output = zeros(1,p); 
@@ -135,6 +235,13 @@ classdef compare_centralities
 		end
 
 		function output = rank_centrality(metrics)
+			% 
+			% Uses matlab's tiedrank function to rank nodes according to their centrality
+			% 
+			% INPUT
+			% - metrics consists of n_nodes x n_metrics
+			% OUTPUT
+			% - output consists of n_nodes x n_metrics
 			
 			n_metrics = size(metrics,2); 
 			ranks = [];
@@ -153,10 +260,15 @@ classdef compare_centralities
 
 		function output = topk(ranks,varargin)
 			% Transform ranks to list of nodes within top-k
+			% 
+			% INPUT
+			% - ranks consists of n_nodes x n_metrics
+			% - k (optional): a number from 1 to n_nodes but is n_nodes by default
+			
 			if(nargin>=2)
 				k = varargin{1}; 
 			else
-				k = 1:10;
+				k = 1:size(ranks,1);
 			end
 			
 			output = zeros(size(ranks,1),size(ranks,2),length(k));
@@ -169,7 +281,8 @@ classdef compare_centralities
 		
 		
 		function [output varargout]= intersection_distance(ranks,varargin)
-			% Agreement in centrality x centrality based on top-k ranks
+			% The intersection distance compare agreement or similarity between two different metrics within each top-k radius
+			% 
 			
 			topk_matrix = compare_centralities.topk(ranks); 
 			[p nmetrics k] = size(topk_matrix); 					
@@ -185,13 +298,17 @@ classdef compare_centralities
 			kmatrix = permute(kmatrix,[2 3 4 1]); 
 			nodal_agreement = sum(output.*kmatrix,4);	
 			node_idx = find(sum(sum(nodal_agreement>eps,2),3)~=0);
+			
 			node_struct = {};
-			for ii=1:length(node_idx)
-					node_struct{ii}.node_no = node_idx(ii); 
-					node_struct{ii}.agreement = sparse(squeeze(nodal_agreement(node_idx(ii),:,:)));
-			end			
-			varargout{1} = node_struct;
-				
+			nargoutchk(1,2);
+			if(nargout>=2)
+				for ii=1:length(node_idx)
+						node_struct{ii}.node_no = node_idx(ii); 
+						node_struct{ii}.agreement = sparse(squeeze(nodal_agreement(node_idx(ii),:,:)));
+				end			
+				varargout{1} = node_struct;
+			end
+			
 		end
 		
 		function output = global_agreement(agreement,varargin)
@@ -209,15 +326,13 @@ classdef compare_centralities
 		end
 		
 		function output = dvalues(ranks)
+			% 
+			% Given any two samples (x,y) a d-value or stress-strength reliability capture P(x>y) as an estimate of population effect size that is independent of sample size.
+			% This function seeks to offer a similar notion of effect size for centrality metrics or their rank equivalents. 
+			% 
+			% 
+			% TODO: Re-implement d-values using the bootstrap
 			
-			% n_metrics = size(ranks,2);
-			% output = zeros(n_metrics,n_metrics);
-			%
-			% for ii = 1:n_metrics
-			% 	for jj = ii:n_metrics
-			% 		output(ii,jj) =
-			% 	end
-			% end
 			if(length(size(ranks))==3)
 				[p nmetrics B] = size(ranks); 
 			else
@@ -466,9 +581,7 @@ classdef compare_centralities
 				% Do the actual drawing
 				figure('Position',[100 100 1000 600]);
 				g.draw();
-			
-			
-			
+						
 		end
 		
 	end
