@@ -89,8 +89,8 @@ classdef currentflow
 			% D_alt = sqrtm(diag(D));
 			% W = D_alt + D_alt^(-1)*W*D_alt^(-1);
 			%centrality = eigenvector_centrality_und(G);			
-			%centrality = bonanich_power_centrality(W',struct('beta',.8)); 	
-			centrality = eigenvector_centrality_und(G); 	
+			%centrality = bonanich_power_centrality(W',struct('beta',.8));
+			centrality = resolvent_centrality(G); 	
 			output = centrality/sum(centrality); 
 			
 		end

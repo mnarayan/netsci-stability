@@ -3,7 +3,7 @@ function output = standardize_centrality(centrality,method)
 	if(~exist('method','var'))
 		method = 'max';
 	elseif(isempty(method))
-		method = 'max'
+		method = 'max';
 	end
 	
 	C_pos = 0;

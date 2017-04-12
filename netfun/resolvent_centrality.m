@@ -92,7 +92,9 @@ function centrality = resolvent_centrality(A,varargin)
 	switch resolvent_type
 	case 'eigenvector'
 		% Standard eigenvector
-		disp('Standard eigenvector centrality')
+		if(visible)
+			disp('Standard eigenvector centrality')
+		end
 		damping_factor = .99;
 		beta = abs(damping_factor)/max_eigenvalue;
 		M = eye(p)-beta*A;
