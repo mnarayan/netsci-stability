@@ -217,7 +217,7 @@ classdef communicability
 					else
 						n_nodes = p-1;
 						C = (length(source)-1)*(length(target)-1) - (n_nodes);
-						A_ii(nodelist{ii},:) = 0; A_ii(:,nodelist(ii)) = 0;	
+						A_ii(nodelist(ii),:) = 0; A_ii(:,nodelist(ii)) = 0;	
 						G_ii = communicability.communicability_matrix(A_ii); 
 						betweenness = (G-G_ii)./G;
 						betweenness(find(eye(p))) = 0;
@@ -452,7 +452,8 @@ classdef communicability
 				nodelist = [1:size(A,1)]; 
 			end
 			
-			metrics(:,4) = communicability.betweenness(A,nodelist);
+			output_betweenness = communicability.betweenness(A,nodelist);
+			metrics(:,4) = output_betweenness.centrality;
 			labels{4} = 'Com. Betweenness'; 
 		
 			output.metrics = metrics;
@@ -486,41 +487,6 @@ classdef communicability
 			
 		end
 		
-		function output = normalize_helper(centrality,method)
-			
-			if(~exist('method','var'))
-				method = 'max';
-			elseif(isempty(method))
-				method = 'max'
-			end
-			
-			Cpos = 0;
-			Cneg = 0;
-			centrality_pos = centrality.*(centrality>0); 
-			centrality_neg = centrality.*(centrality<0);
-			
-			switch method
-				
-			case 'max'
-				Cpos = norm(centrality_pos,'Inf');	
-				Cneg = norm(-centrality_neg,'Inf');			
-			case 'frob'
-				C = norm(centrality,2);
-				C_pos = C; C_neg = C;
-			case 'abs'
-				C = norm(centrality,1);
-				C_pos = C; C_neg = C;				
-			end
-			
-			if(C_pos==0)
-				C_pos = 1;
-			end
-			if(C_neg==0)
-				C_neg = 1;
-			end
-			output = centrality_pos/C_pos + centrality_neg/C_neg;
-			
-		end
 	
 	end
 	
