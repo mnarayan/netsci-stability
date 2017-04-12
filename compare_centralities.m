@@ -171,8 +171,13 @@ classdef compare_centralities
 			fun_results = metricfun(A,nodelist,source,target); 
 			metrics = fun_results.centrality;
 			vec_metrics = full(metrics(metrics~=0)); vec_metrics = reshape(vec_metrics,[length(vec_metrics) 1]);
-			discriminability = compare_centralities.discriminability(vec_metrics); 
-			ranks(metrics~=0) = sparse(compare_centralities.rank_centrality(vec_metrics));
+			if(~isempty(vec_metrics))
+				discriminability = compare_centralities.discriminability(vec_metrics); 
+				ranks(metrics~=0) = sparse(compare_centralities.rank_centrality(vec_metrics));
+			else
+				discriminiability = [];
+				ranks = [];
+			end
 			
 			metrics(nodelist{1})
 			output.fun = metricfun;
@@ -216,7 +221,7 @@ classdef compare_centralities
 			p = size(metrics,2); 
 			output = zeros(1,p); 
 			for ii=1:p
-					output(ii) = centrality2centralization(metrics(:,ii),[],0); 
+				output(ii) = centrality2centralization(metrics(:,ii),[],0); 
 			end
 			
 		end
