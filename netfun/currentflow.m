@@ -26,14 +26,15 @@ classdef currentflow
 		
 			p = size(A,1); 
 			A(find(eye(p))) = 0; 
-			D = sum(abs(A)); 
+			D = sum(abs(A));
+			D(D==0) = 1; 
 			normalize = true;
 			if(normalize)
-				output = eye(p) - inv(diag(sqrt(D)))*A*inv(diag(sqrt(D)));
+				output = eye(p) - diag(1./sqrt(D))*A*diag(1./sqrt(D));
 			else
 				output = diag(D) - A; 
 			end
-			
+			output = (output + output')/2;
 		end
 
 		function [output varargout] = distance(A, varargin)
@@ -141,7 +142,6 @@ classdef currentflow
 				output = pos_centrality/max(max(pos_centrality),1) + neg_centrality/max(max(neg_centrality),1); 
 			else
 				output = sum(G); 
-				output = output/max(output);
 			end
 			
 		end
@@ -179,7 +179,7 @@ classdef currentflow
 			output = zeros(p,1);
 
 			if(exist('G','var'))
-				if(isempty(K))
+				if(isempty(G))
 					G = currentflow.inverse_laplacian_matrix(A); 
 				end
 			else
@@ -215,18 +215,66 @@ classdef currentflow
 		end
 		
 		function output = closeness(A,K,varargin)
-			% K should be currentflow.distance
-			
+		% CURRENTFLOW.CLOSENESS 	
+		% Inputs: 	
+		% K should be currentflow.distance
+		
+			if(isempty(K))
+				K = currentflow.distance(A); 
+			end	
 			p = size(K,1);
 			farness = sum(K)/p;
 			closeness = 1./farness;
+			closeness(closeness==Inf) = 0;
 			output = closeness;
 			
 		end
 		
+		function output = global_efficiency(A,K,varargin)
+		% CURRENTFLOW.GLOBAL_EFFICIENCY	
+			% K should be currentflow.distance
+			
+			if(isempty(K))
+				K = currentflow.distance(A); 
+			end	
+			p = size(K,1);
+			distmatrix = K(triu(K,1)>0);
+			if(length(distmatrix)<nchoosek(p,2))
+				warning('efficiency does not have full upper triangular');
+			end			
+			efficiency = sum(sum(1./distmatrix))/nchoosek(p,2);
+			output = efficiency;
+		end
+		
+		function output = local_efficiency(A,varargin)
+		% CURRENTFLOW.LOCAL_EFFICIENCY	
+						
+			p = size(A,1); 
+			output = zeros(p,1);
+			
+			if(nargin==3)
+				nodelist = varargin{1}; 
+			else
+				nodelist = 1:p;
+			end 
+			
+			if(isempty(nodelist)|nodelist(1) == 0)
+				disp('Skipping Local. Efficiency')
+			else
+				for ii=[nodelist]
+					tmpA = zeros(p-1,p-1);
+					idx = setdiff(1:p,ii); 
+					tmpA = A(idx,idx);
+					distmatrix = currentflow.distance(tmpA);
+					output(ii) = currentflow.global_efficiency(tmpA,distmatrix);
+				end
+			end
+			
+		end
 		
 		function output = metrics(A,varargin)
 			
+			std_method = 'max'
 			metrics = []; 
 			labels = {}; 
 			
@@ -234,10 +282,13 @@ classdef currentflow
 			K = currentflow.distance(A,G); 
 			
 			metrics(:,1) = currentflow.neighborhood(A,G); 
+			metrics(:,1) = standardize_centrality(metrics(:,1),std_method);
 			labels{1} = 'CFlow Neighbor.';
 			metrics(:,2) = currentflow.degree(A,K); 
+			metrics(:,2) = standardize_centrality(metrics(:,2),std_method);
 			labels{2} = 'CFlow Degree';
-			metrics(:,3) = currentflow.closeness(A,K); 
+			metrics(:,3) = currentflow.closeness(A,K);
+			metrics(:,3) = standardize_centrality(metrics(:,3),std_method);	 
 			labels{3} = 'CFlow Closeness';
 			
 			if(nargin>=2)
@@ -246,11 +297,25 @@ classdef currentflow
 				nodelist = [1:size(A,1)]; 
 			end
 			metrics(:,4) = currentflow.betweenness(A,G,nodelist);
+			metrics(:,4) = standardize_centrality(metrics(:,4),std_method);	
 			labels{4} = 'CFlow Betweenness'; 
+		
+			if(nargin>=2)
+				nodelist = varargin{1}; 				
+			else
+				nodelist = [1:size(A,1)]; 
+			end
+			metrics(:,5) = currentflow.local_efficiency(A,nodelist);
+			metrics(:,5) = standardize_centrality(metrics(:,5),std_method);	
+			labels{5} = 'CFlow LocEfficiency'; 
 		
 			output.metrics = metrics;
 			output.labels = labels;
-			output.type = {'Neighbor.', 'Degree', 'Closeness', 'Betweenness'}; 
+			output.type = {'Neighbor.',...
+						   'Degree', ...
+						   'Closeness', ...
+						   'Betweenness', ...
+						   'Loc Efficiency'}; 
 			
 		end
 	
