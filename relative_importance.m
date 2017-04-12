@@ -3,12 +3,12 @@ function output = relative_importance(metric)
 	% 
 	% Returns a table with ranks
 	
-	useMatlab = 1;
+	useMatlab = (exist('tiedrank')>=2);
 	p = length(metric);
 	metric = reshape(metric,[p 1]); 
 	
 	if(useMatlab)
-		rank_metric = tiedrank(metric); 
+		rank_metric = p+1 - tiedrank(metric,0); 
 	end
 	
 	output = array2table(metric, 'VariableNames', {'rawmetric'});
