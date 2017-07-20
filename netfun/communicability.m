@@ -54,15 +54,18 @@ classdef communicability
 			% optional:
 			%		
 			% OUTPUTS:
-			
-			if(isempty(G))
+			if(exist('G','var'))
+    			if(isempty(G))
+    				G = communicability.communicability_matrix(A);
+    			end
+            else
 				G = communicability.communicability_matrix(A);
-			end				 
+            end
 			p = size(G,1); 			
 			D = diag(G);
 			if(sum(D<=0))
-				D = 1+D;
-			end
+                D(D<=0) = 1.0;
+            end
 			
 			normalized=true;
 			output = zeros(size(G)); 
@@ -195,6 +198,8 @@ classdef communicability
 		
 			
 			centrality = sparse(zeros(length(A),1));
+            centrality_pos = centrality;
+            centrality_neg = centrality;
 			dyadic = cell([1 length(nodelist)]);
 			normalization = cell([1 length(nodelist)]);			
 			if(isempty(nodelist))
@@ -211,28 +216,54 @@ classdef communicability
 						betweenness = (G-G_ii)./G;
 						betweenness(find(eye(p))) = 0;						
 						betweenness(nodelist{ii},nodelist{ii}) = 0;
-						centrality(nodelist{ii}) = .5*sum(sum(betweenness(source,target)))/C + ...
-						 						.5*sum(sum(betweenness(target,source)))/C;	
+                        betweenness_pos = betweenness.*(betweenness>0);
+                        betweenness_neg = betweenness.*(betweenness<0);  
+						centrality(nodelist{ii}) = ...
+                         .5*sum(sum(betweenness(source,target)))/C + ...
+	 						.5*sum(sum(betweenness(target,source)))/C;
+						centrality_pos(nodelist{ii}) = ...
+                         .5*sum(sum(betweenness_pos(source,target)))/C + ...
+				            .5*sum(sum(betweenness_pos(target,source)))/C;
+						centrality_neg(nodelist{ii}) = ...
+                         .5*sum(sum(betweenness_neg(source,target)))/C + ...
+				            .5*sum(sum(betweenness_neg(target,source)))/C;    
 														
 					else
 						n_nodes = p-1;
 						C = (length(source)-1)*(length(target)-1) - (n_nodes);
-						A_ii(nodelist(ii),:) = 0; A_ii(:,nodelist(ii)) = 0;	
+						A_ii(nodelist{ii},:) = 0; A_ii(:,nodelist{ii}) = 0;	
 						G_ii = communicability.communicability_matrix(A_ii); 
 						betweenness = (G-G_ii)./G;
 						betweenness(find(eye(p))) = 0;
-						betweenness(nodelist(ii),nodelist(ii)) = 0;						
-						centrality(nodelist(ii)) = .5*sum(sum(betweenness(source,target)))/C + ...
-												.5*sum(sum(betweenness(target,source)))/C;	
-					end				
-					dyadic{ii} = sparse(betweenness);
-					normalization{ii} = C;											
+						betweenness(nodelist{ii},nodelist{ii}) = 0;	
+                        betweenness_pos = betweenness.*(betweenness>0);
+                        betweenness_neg = betweenness.*(betweenness<0);                        
+						centrality(nodelist{ii}) = ...
+                         .5*sum(sum(betweenness(source,target)))/C + ...
+				            .5*sum(sum(betweenness(target,source)))/C;
+						centrality_pos(nodelist{ii}) = ...
+                         .5*sum(sum(betweenness_pos(source,target)))/C + ...
+				            .5*sum(sum(betweenness_pos(target,source)))/C;
+						centrality_neg(nodelist{ii}) = ...
+                         .5*sum(sum(betweenness_neg(source,target)))/C + ...
+				            .5*sum(sum(betweenness_neg(target,source)))/C;        
+					end			
+			        normalization{ii} = C;	
+					dyadic{ii} = sparse(betweenness.*abs(betweenness)>.01*C/p^2);
 				end
 			end
 			
-			assert(sum(centrality<0)==0,'Negative values of Betweennes. Not possible')
+            centrality = sqrt((centrality_pos).^2 + (centrality_neg).^2);
+            
+            
+            %             try
+            % assert(sum(centrality<0)==0,'Negative values of Betweennes')
+            %             catch me
+            %             end
 
 			output.centrality = centrality;
+            output.centrality_pos = centrality_pos;
+            output.centrality_neg = centrality_neg;
 			output.nodelist = nodelist;	
 			output.dyadic = dyadic;		
 			output.normalization = normalization;
@@ -378,12 +409,14 @@ classdef communicability
 				normalized=false;
 			end
 			
-			% % standard closeness
-			% farness = sum(K(:,subset),2)/p;			
-			% closeness = 1./farness;
-			% reverse closeness
-			closeness = (length(subset) - sum(K(:,subset),2))/length(subset);
-			
+            farness = sum(K(:,subset),2)/length(subset);
+			%% standard closeness
+            % closeness = 1./farness;			
+            %% reverse closeness for induced measures
+            closeness = 1-farness;
+            
+			closeness(closeness==Inf) = 0;
+            			
 			if(normalized)
 				output = closeness/max(closeness);
 			else
