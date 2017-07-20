@@ -201,7 +201,11 @@ classdef currentflow
 				end
 			end
 			
-			assert(sum(output<0)==0,'Negative values of Betweennes')
+            try
+			    assert(sum(output<0)==0,'Negative values of Betweennes')
+            catch me
+                disp(me)
+            end
 			% disp('No. of negative values')
 			% sum(output<0)
 			
@@ -219,9 +223,13 @@ classdef currentflow
 		% Inputs: 	
 		% K should be currentflow.distance
 		
-			if(isempty(K))
-				K = currentflow.distance(A); 
-			end	
+            if(exist('K','var'))
+    			if(isempty(K))
+    				K = currentflow.distance(A); 
+    			end	
+            else
+                K = currentflow.distance(A);
+            end
 			p = size(K,1);
 			farness = sum(K)/p;
 			closeness = 1./farness;
@@ -250,26 +258,28 @@ classdef currentflow
 		% CURRENTFLOW.LOCAL_EFFICIENCY	
 						
 			p = size(A,1); 
-			output = zeros(p,1);
+			centrality = zeros(p,1);
 			
-			if(nargin==3)
+			if(nargin>=2)
 				nodelist = varargin{1}; 
 			else
 				nodelist = 1:p;
 			end 
 			
-			if(isempty(nodelist)|nodelist(1) == 0)
+            
+			if(isempty(nodelist)|nodelist{1} == 0)
 				disp('Skipping Local. Efficiency')
 			else
-				for ii=[nodelist]
+				for ii=1:length(nodelist)
 					tmpA = zeros(p-1,p-1);
-					idx = setdiff(1:p,ii); 
+					idx = setdiff(1:p,nodelist{ii}); 
 					tmpA = A(idx,idx);
 					distmatrix = currentflow.distance(tmpA);
-					output(ii) = currentflow.global_efficiency(tmpA,distmatrix);
+					centrality(nodelist{ii}) = ...
+                         currentflow.global_efficiency(tmpA,distmatrix);
 				end
 			end
-			
+			output.centrality = centrality;
 		end
 		
 		function output = metrics(A,varargin)
